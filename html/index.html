@@ -22,8 +22,8 @@
   <!--Replace with your tailwind.css once created-->
   <link href="https://unpkg.com/@tailwindcss/custom-forms/dist/custom-forms.min.css" rel="stylesheet">
   <!--Tailwind Custom Forms - use to standardise form fields - https://github.com/tailwindcss/custom-forms-->
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js" integrity="sha256-T/f7Sju1ZfNNfBh7skWn0idlCBcI3RwdLSS4/I7NQKQ=" crossorigin="anonymous"></script>
+  <!--   axios requests -->
 
 </head>
 
@@ -35,7 +35,7 @@
     </br>
     <p class="text-xl mt-5 mb-2 text-gray-700">Pay me</p>
     <button onclick="getPayID()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-        $zochow.ski/pay
+        pay$zochow.ski
     </button>
     <pre id="demo"></pre>
     <script>
@@ -43,7 +43,7 @@
       axios({
         method: 'get',
         url: 'https://zochow.ski/pay',
-        headers: {accept: 'application/xrpl-mainnet+json'}
+        headers: {accept: 'application/xrpl-mainnet+json', 'PayID-version': '1.0'}
       }).then(function (response) {
         document.getElementById('demo').innerHTML = JSON.stringify(response.data, null, 2);
       })
@@ -57,8 +57,9 @@
     const tiny = require('tiny-secp256k1')
     const XpringCommonJS = require('xpring-common-js')
     const PayIDUtils = XpringCommonJS.PayIDUtils
-    let paymentPointer = PayIDUtils.parsePaymentPointer('$pay.michael.zochow.ski')
-    console.log("URL: https://" + paymentPointer.host + paymentPointer.path)
+    const payID = 'pay$zochow.ski'
+    let payIDParsed = PayIDUtils.parsePayID(payID)
+    console.log("URL: https://" + payIDParsed.host + payIDParsed.path)
     </div>
 
 
@@ -66,49 +67,56 @@
     <script src="https://embed.runkit.com" data-element-id="runkit-xrp-mainnet-url"></script>
     <div id="runkit-xrp-mainnet-url" >
     const axios = require("axios");
+    const payIDURL = 'https://zochow.ski/pay';
+    const network = 'xrpl-mainnet'  // Options: {xrpl-testnet, eth-mainnet, btc-mainnet}
     const response = (await axios({
         method: 'get',
-        url: 'https://pay.michael.zochow.ski/.well-known/pay',
-        headers: {accept: 'application/xrpl-mainnet+json'}
-      })).data
-    </div>
-
-    <p class="text-xl mt-10 mb-2 text-gray-700">PayID URL -> XRP Testnet Address</p>
-    <script src="https://embed.runkit.com" data-element-id="runkit-xrp-testnet-url"></script>
-    <div id="runkit-xrp-testnet-url" >
-    const axios = require("axios");
-    const response = (await axios({
-        method: 'get',
-        url: 'https://zochow.ski/pay',
-        headers: {accept: 'application/xrpl-testnet+json'}
+        url: payIDURL,
+        headers: {accept: 'application/' + network + '+json', 'PayID-version': '1.0'}
       })).data
     </div>
 
 
-    <p class="text-xl mt-10 mb-2 text-gray-700">PayID -> XRP Mainnet Address</p>
+    <p class="text-xl mt-10 mb-2 text-gray-700">PayID -> XRP Mainnet Address (manual)</p>
     <script src="https://embed.runkit.com" data-element-id="runkit-xrp-mainnet-payid"></script>
     <div id="runkit-xrp-mainnet-payid" >
-    const axios = require("axios");
+    const axios = require("axios")
     const tiny = require('tiny-secp256k1')
     const XpringCommonJS = require('xpring-common-js')
     const PayIDUtils = XpringCommonJS.PayIDUtils
-    let paymentPointer = PayIDUtils.parsePaymentPointer('$pay.michael.zochow.ski')
-    let PayIDURL = 'https://' + paymentPointer.host + paymentPointer.path
+    const payID = 'pay$zochow.ski'
+    let payIDParsed = PayIDUtils.parsePayID(payID)
+    let PayIDURL = 'https://' + payIDParsed.host + payIDParsed.path
     const response = (await axios({
         method: 'get',
         url: PayIDURL,
-        headers: {accept: 'application/xrpl-mainnet+json'}
+        headers: {accept: 'application/' + network + '+json', 'PayID-version': '1.0'}
       })).data
     </div>
 
-
+    <p class="text-xl mt-10 mb-2 text-gray-700">PayID -> Payment Rail Address (SDK)</p>
+    <script src="https://embed.runkit.com" data-element-id="runkit-xrp-mainnet-payid-sdk"></script>
+    <div id="runkit-xrp-mainnet-payid-sdk" >
+    const grpc = require('grpc');
+    const { PayIDClient } = require("xpring-js");
+    const tiny = require('tiny-secp256k1');
+    const payID = 'pay$zochow.ski';
+    const payIDClient = new PayIDClient("xrpl-mainnet");
+    // const payIDClient = new PayIDClient("xrpl-testnet");
+    // const payIDClient = new PayIDClient('eth-mainnet')
+    // const payIDClient = new PayIDClient('btc-mainnet')
+    const recipientAddress = await payIDClient.addressForPayID(payID)
+    console.log("Recipient address is " + recipientAddress + "\n")
+    </div>
+    
+    
     <p class="text-xl mt-10 mb-2 text-gray-700">XAddress Conversion Tool</p>
     <script src="https://embed.runkit.com" data-element-id="runkit-xaddress"></script>
     <div id="runkit-xaddress">
-    const {Encode, Decode} = require('xrpl-tagged-address-codec')
-    const tagged = Encode({ account: 'rUad1tgEacc3UaMwpPkHbBKbzEZbTKcKyw', tag: 495, test: true })
+    const {classicAddressToXAddress, xAddressToClassicAddress} = require('ripple-address-codec')
+    const tagged = classicAddressToXAddress('rUad1tgEacc3UaMwpPkHbBKbzEZbTKcKyw', 495, true)
     console.log(tagged)
-    const untagged = Decode(tagged)
+    const untagged = xAddressToClassicAddress(tagged)
     console.log(untagged)
     </div>
     <a href="https://xrpaddress.info/" target="_blank">xrpaddress.info</a>
@@ -126,4 +134,3 @@
 </body>
 
 </html>
-
